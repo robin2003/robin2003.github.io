@@ -1,0 +1,7 @@
+#+TITLE: Hello world
+#+SLUG: hello
+#+DATE:<2021-11-27>
+#+OPTIONS: toc:nil num:nil
+#+FILETAGS: :blogging:emacs:
+
+* hello world

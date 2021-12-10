@@ -1,0 +1,48 @@
+#+TITLE: 一个整型溢出的bug
+#+DATE:<2021-12-10>
+#+OPTIONS: toc:nil num:nil
+#+FILETAGS: :blogging:c++:
+
+* 一个整型溢出的bug
+** 问题复原
+最近在项目中发现一个很典型的整型溢出的bug，先讲讲问题经过。
+
+在项目中，一个对象有个expiration的成员变量，目的是标记该对象是否有效，该成员变量声明如下：
+#+BEGIN_SRC
+unsigned long long mExpirationTime;
+ #+END_SRC
+
+项目中，为了过滤掉要在2分钟内变得无效的对象，于是就写了如下的逻辑：
+#+BEGIN_SRC
+...
+for( int i = 0; i < size(); i++)
+{
+...
+    if( ( mExpirationTime - THRESHOLD_IN_SECOND ) > mCurrentTime )
+    {   
+        printf("Has been marked as expiration, ignore it!\n");
+        continue;
+    }
+...
+}
+...
+ #+END_SRC
+本意是过滤掉无效对象，但是当程序跑起来，发现没有被标记的对象依然也被过滤掉！
+
+最后终于发现过滤逻辑有问题。
+
+对于*mExpirationTime*,正常对象，初始值都是0，当程序在运行到上面代码段时候，由于0减去
+一个正数THRESHOLD_IN_SECOND就变成一个负值了，减法完成后的结果最终会转换成被减数相同
+类型，由于被减数是无符号型，所以负值就overflow 成一个正值，最终导致if 条件成立，正常
+对象被过滤掉。
+
+** 启示
+在开发过程中，这种隐式数据转换场景非常多，出问题后，也往往很隐蔽，所以平时一定要格外小心。
+
+能想到的可以避免的一些途径有：
+1. 开发阶段： 谨慎的使用无符号作为条件判断，充分考虑到overflow可能性；
+2. code review阶段：要in mind这种数值类型，尤其是无符号类型，在作为判断条件时候，一定要
+   重点关注；
+3. 重视静态代码检查工具。很多静态代码监测工具都能够识别出这种潜在问题，很多项目code base比较大，
+   系统也比较复杂，因为历史原因，可能埋藏了很多这样的潜在问题，这种时候，静态代码检测工具就
+   有用武之地了。

@@ -17,8 +17,8 @@
     <link></link>
     <description><![CDATA[]]></description>
     <language>en</language>
-    <pubDate>Fri, 10 Dec 2021 00:00:00 +0800</pubDate>
-    <lastBuildDate>Fri, 10 Dec 2021 11:18:54 +0800</lastBuildDate>
+    <pubDate>Sat, 18 Dec 2021 00:00:00 +0800</pubDate>
+    <lastBuildDate>Sat, 18 Dec 2021 19:32:07 +0800</lastBuildDate>
     <generator>weblorg 0.1.0 (https://emacs.love/weblorg)</generator>
     <webMaster>xxpyb@126.com (robin2003)</webMaster>
     <image>
@@ -27,6 +27,97 @@
       <link></link>
     </image>
 
+    
+    <item>
+      <title>残留代码是否要删除</title>
+      <link>https://robin2003.github.io/blog/残留代码是否要删除.html</link>
+      <author>undefined</author>
+      <guid isPermaLink="false">https://robin2003.github.io/blog/残留代码是否要删除.html</guid>
+      <pubDate>Sat, 18 Dec 2021 00:00:00 +0800</pubDate>
+      <description><![CDATA[
+<div id="outline-container-残留代码到底是否需要删除" class="outline-2">
+<h2 id="残留代码到底是否需要删除">残留代码到底是否需要删除？</h2>
+<div class="outline-text-2">
+<p>
+最近项目中出了个regression，由于有人移出了项目中认为没有用的残留配置，删除了一些tomcat的配置，导致所有发送到的tomcat请求都被拒绝，
+系统完全没法正常工作,最终导致整个测试计划打乱，要重新出版本测试。
+</p>
+
+<p>
+问题修复也简单(配置回退)，但是对于残留代码到底要不要删除,能不能删除这个问题本身，是有很多可以探讨的地方的。
+</p>
+</div>
+</div>
+
+<div id="outline-container-为什么会有残留代码" class="outline-2">
+<h2 id="为什么会有残留代码">为什么会有残留代码</h2>
+<div class="outline-text-2">
+<p>
+之所以有残留的代码，一方面说明项目持续时间很长，接手的人很多，而最开始的设计在传递两到三代维护者后，大家开始逐渐就忽略掉最原始的
+设计，更关注简单，快速解决问题，有时候明明项目中包含相似功能API，但是后续接手的人不知道，又重新设计一个相似功能的API，久而久之
+代码就错乱不堪，而当有勇敢的程序员去尝试改动，删除即有的残留在项目中的代码，稍有不慎，就会陷入动老代码必死的尴尬。同样对于web
+server的一些配置也是一样，最开始，功能简单，单一，所以配置也简单，但随着业务不断变化，原始配置也会经历，修改，增加，删除，
+这一系列生命周期的变化，当然后续接手项目的人，由于自己技术栈跟最开始的不一样，也会选用新技术栈技术，这样就会造成项目中各种技术
+交错,配置也乱花渐欲迷人眼目让人头疼.
+</p>
+</div>
+</div>
+
+<div id="outline-container-当接手这样的项目-我们怎么对待残留的代码" class="outline-2">
+<h2 id="当接手这样的项目-我们怎么对待残留的代码">当接手这样的项目，我们怎么对待残留的代码</h2>
+<div class="outline-text-2">
+<p>
+当接手这样的项目，我们如何来对待残留的代码呢？ 个人感觉能够删除还是删除最好，不然越到后来，越是乱，但是删除也是需要遵循一些原则，
+我觉得可以从如下几点来考虑：
+</p>
+</div>
+
+<div id="outline-container-需要替换或更新api时" class="outline-3">
+<h3 id="需要替换或更新api时">需要替换或更新API时</h3>
+<div class="outline-text-3">
+<p>
+由于API可能被很多代码模块使用，所以我们在替换或更新API时候要考虑对老的API的兼容，尤其对待错误处理时候，一定要保持对老API一致处理方式，
+这样可以最小的引入regression。
+</p>
+
+<p>
+曾经在项目中就碰到过替换API情况，某位同学引入一新API来替换老的，该API给定某字符串查找关联的另一字符串，如果存在通过引用变量
+返回该关联字符串。
+</p>
+
+<p>
+函数原型大致如下
+</p>
+<pre class="example">
+BOOLEAN GetSessionId(String sessionName, String &amp;sessionId);
+</pre>
+
+<p>
+原始API，对于找不到情况，返回true，sessionId 返回空字符串。
+</p>
+
+<p>
+但是某同学改变了API这种行为，当找不到，返回NOT<sub>FOUND</sub> error,导致原来调用该API的code，对于这种情况预期返回SUCCESS，但是新API返回NOT<sub>FOUND</sub> error，
+由于预期不一致导致引入很多regression。
+</p>
+</div>
+</div>
+
+<div id="outline-container-更新代码库一些配置时" class="outline-3">
+<h3 id="更新代码库一些配置时">更新代码库一些配置时</h3>
+<div class="outline-text-3">
+<p>
+这种情况需要非常慎重,如果项目早期,完全没有问题,但是越到后期,尤其经过两三代维护人员维护后,更得慎重,本文开头说的情况就是贸然删除自以为不要
+的配置导致一些web请求都被拒绝,导致非常大的regression. 由于程序员本身熟悉自己相关模块,但是整个项目级别可能没法很好把握,所以很有可能忽略其他
+可能在使用该模块的功能,从而导致问题发生.
+对于这种情况,个人感觉要从项目经理或者产品经理来协调整个项目,首先做好各个模块摸底,统计出哪些模块在使用,另外,对各个模块评估更新配置带来风险有多大,
+其次也是最重要的就是要给予足够到regression测试.
+</p>
+</div>
+</div>
+</div>
+]]></description>
+    </item>
     
     <item>
       <title>一个整型溢出的bug</title>
